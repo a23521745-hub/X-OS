@@ -1,0 +1,19 @@
+#!/bin/sh
+# live hook: canlı ortamda ilk açılış öncesi küçük hazırlıklar.
+set -eu
+# Oturum kullanıcısının evine başlangıç notu (ilk denemede rehberlik).
+if [ -e "chroot/home/xos" ]; then
+    cat > "chroot/home/xos/X-OS-hosgeldin.txt" <<'EOF'
+X-OS'a hoş geldin!
+
+Bu bir canlı (live) ortamdır. Kalıcı kurulum v0.3 ile gelecek.
+
+Kısayollar:
+  Meta           → Launcher (arama + sticker'lar)
+  Esc            → açık yüzeyi kapat
+  Dock'ta sağ    → uygulama büyür (magnifikasyon)
+
+Geliştirici notu: kaynak için github.com/a23521745-hub/X-OS
+EOF
+    chown -R 1000:1000 "chroot/home/xos/X-OS-hosgeldin.txt" 2>/dev/null || true
+fi

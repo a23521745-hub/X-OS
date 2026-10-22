@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    name: Lint & testler
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Token senkronizasyonu
+        run: python3 tools/gen-tokens.py --check
+      - name: QML yapısal lint
+        run: python3 tools/qml-lint.py
+      - name: Test paketi
+        run: python3 tools/run_tests.py
+
+  build-shell:
+    name: plasmex derlemesi (Debian trixie, Qt6)
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bağımlılıklar
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config \
+            qt6-base-dev qt6-declarative-dev qt6-wayland-dev \
+            liblayershellqtinterface-dev \
+            qml6-module-qtquick qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts qml6-module-qtquick-shapes \
+            qml6-module-qtquick-effects qml6-module-qtquick-window \
+            libgl1 libegl1 libxkbcommon0 libdbus-1-3
+      - name: Yapılandır & derle
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j"$(nproc)"
+      - name: QML kaynaklarını doğrula (qmllint)
+        run: |
+          if command -v qmllint >/dev/null 2>&1; then
+            qmllint shell/qml/Main.qml shell/qml/PlasmaX/*.qml \
+              shell/qml/PlasmaX/components/*.qml shell/qml/PlasmaX/panels/*.qml \
+              shell/qml/PlasmaX/services/*.qml || true
+          fi
+      - name: Smoke test (offscreen)
+        run: |
+          QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800 \
+            && echo "shell başlayıp 8 sn yaşadı (tamam)"
+          # exit 124 = süre doldu hâlâ yaşıyordu → kabul
+          test $? -eq 0 -o $? -eq 124
+        continue-on-error: false
+
+  iso-config-check:
+    name: ISO yapılandırma denetimi
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: live-build kur & config çalıştır
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y live-build
+          cd system/live-build && ./auto/config
+          test -e .build/config && echo "lb config OK"

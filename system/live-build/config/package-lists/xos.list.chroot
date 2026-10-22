@@ -1,0 +1,70 @@
+# X-OS canlı ortam paket listesi (Debian 13 "trixie", amd64)
+# live-build: lb config --package-lists-lists xos
+
+# ── Temel sistem ─────────────────────────────────────────────
+base
+live-config
+live-config-systemd
+systemd-sysv
+sudo
+firmware-linux-free
+firmware-linux-nonfree
+amd64-microcode
+
+# ── X-OS oturumu: KWin compositor + Qt6 shell ────────────────
+sddm
+kwin
+kwin-x11
+kwin-common
+kwin-wayland
+xwayland
+qt6-wayland
+qt6-base
+qt6-declarative
+qt6-multimedia
+layer-shell-qt
+qml6-module-qtquick
+qml6-module-qtquick-controls
+qml6-module-qtquick-layouts
+qml6-module-qtquick-shapes
+qml6-module-qtquick-effects
+qml6-module-qtquick-window
+qml6-module-qtqml-workerscript
+
+# ── Uygulamalar (varsayılan) ─────────────────────────────────
+konsole
+dolphin
+kate
+gwenview
+okular
+spectacle
+firefox-esr
+thunar
+mousepad
+gnome-disk-utility
+
+# ── Multimedya / donanım ─────────────────────────────────────
+pipewire
+wireplumber
+pipewire-pulse
+alsa-utils
+brightnessctl
+network-manager
+network-manager-gnome
+bluez
+blueman
+power-profiles-daemon
+upower
+fonts-dejavu
+fonts-noto-core
+fonts-noto-color-emoji
+fonts-inter
+
+# ── Geliştirme (canlı ortamda derleme denemeleri için) ───────
+build-essential
+cmake
+ninja-build
+qt6-base-dev
+qt6-declarative-dev
+qt6-wayland-dev
+liblayershellqtinterface-dev

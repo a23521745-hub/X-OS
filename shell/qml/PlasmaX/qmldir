@@ -1,0 +1,19 @@
+module PlasmaX
+singleton Theme 1.0 Theme.qml
+
+Wallpaper 1.0 components/Wallpaper.qml
+GlassSurface 1.0 components/GlassSurface.qml
+GlassButton 1.0 components/GlassButton.qml
+Chip 1.0 components/Chip.qml
+IconGlyph 1.0 components/IconGlyph.qml
+DesktopLayer 1.0 components/DesktopLayer.qml
+StickerLayer 1.0 components/StickerLayer.qml
+
+TopBar 1.0 panels/TopBar.qml
+Dock 1.0 panels/Dock.qml
+Launcher 1.0 panels/Launcher.qml
+ControlCenter 1.0 panels/ControlCenter.qml
+NotificationCenter 1.0 panels/NotificationCenter.qml
+LockScreen 1.0 panels/LockScreen.qml
+
+ClockService 1.0 services/ClockService.qml

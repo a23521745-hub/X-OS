@@ -66,3 +66,14 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# X-OS specific
+out/
+*.iso
+live-build/build/
+live-build/.build/
+.cache/
+__pycache__/
+*.pyc
+.qt/
+CMakeUserPresets.json
