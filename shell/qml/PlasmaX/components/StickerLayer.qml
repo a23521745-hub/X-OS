@@ -94,7 +94,11 @@ Item {
             DragHandler {
                 id: drag
                 target: sticker
-                onReleased: {
+                // DragHandler'in 'released' sinyali yok; bırakma, active
+                // false olduğunda yakalanır.
+                onActiveChanged: {
+                    if (active)
+                        return
                     // Snap to a subtle grid so scattered stickers stay tidy.
                     const nx = Math.round(sticker.x / 24) * 24
                     const ny = Math.round(sticker.y / 24) * 24
