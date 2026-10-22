@@ -1,6 +1,7 @@
 #include "xdefender.h"
 
 #include <QDBusConnection>
+#include <QDBusConnectionInterface>
 #include <QDBusInterface>
 #include <QDBusReply>
 #include <QTimer>
@@ -35,7 +36,9 @@ XDefenderClient::XDefenderClient(QObject *parent) : QObject(parent)
 void XDefenderClient::refresh()
 {
     QDBusConnection bus = QDBusConnection::sessionBus();
-    const bool nowAvailable = bus.serviceIsRegistered(QString::fromLatin1(kService));
+    QDBusConnectionInterface *busIface = bus.interface();
+    const bool nowAvailable = busIface
+        && busIface->isServiceRegistered(QString::fromLatin1(kService));
     if (nowAvailable != m_available) {
         m_available = nowAvailable;
         emit availableChanged();

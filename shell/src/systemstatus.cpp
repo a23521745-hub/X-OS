@@ -64,11 +64,12 @@ void SystemStatus::refresh()
     if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qint64 total = 0, avail = -1;
         while (!f.atEnd()) {
-            const QByteArray line = f.readLine();
-            if (line.startsWith("MemTotal:"))
-                total = line.section(' ', 1, 1).trimmed().toLongLong();
-            else if (line.startsWith("MemAvailable:"))
-                avail = line.section(' ', 1, 1).trimmed().toLongLong();
+            // QByteArray::section yok — QString'e çevirip ayır.
+            const QString line = QString::fromUtf8(f.readLine());
+            if (line.startsWith(QLatin1String("MemTotal:")))
+                total = line.section(QLatin1Char(' '), 1, 1).trimmed().toLongLong();
+            else if (line.startsWith(QLatin1String("MemAvailable:")))
+                avail = line.section(QLatin1Char(' '), 1, 1).trimmed().toLongLong();
         }
         if (total > 0 && avail >= 0) {
             const qreal pct = 100.0 * double(total - avail) / double(total);

@@ -49,6 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
         run: |
           . .github/workflows/xos-log.sh
           set +e
@@ -63,7 +64,8 @@ jobs:
           if [ "$rc" -ne 0 ]; then
             size=$(wc -c < /tmp/xos_build.txt | tr -d ' ')
             echo "::error::META rc=$rc size=$size"
-            joined=$(tail -n 40 /tmp/xos_build.txt | sed -e 's/%/%%/g' \
+            joined=$(grep -v -e '^/usr/bin/c' -e '^\[' -e '^\s*$' /tmp/xos_build.txt \
+              | tail -n 50 | sed -e 's/%/%%/g' \
               | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
             echo "::error::JOINED ${joined}"
             xos_post_log "plasmex build rc=$rc" /tmp/xos_build.txt
@@ -81,6 +83,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
         run: |
           . .github/workflows/xos-log.sh
           set +e
@@ -116,6 +119,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
