@@ -28,7 +28,9 @@ public:
     int threats() const { return m_threats; }
 
     Q_INVOKABLE void quickScan();
-    Q_INVOKABLE void refresh();
+
+public slots:
+    void refresh();
 
 signals:
     void availableChanged();

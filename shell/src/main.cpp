@@ -11,6 +11,8 @@
 #include <QQmlError>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QSize>
+#include <QStringList>
 #include <QVariant>
 #include <QIcon>
 

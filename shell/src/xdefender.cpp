@@ -23,10 +23,10 @@ XDefenderClient::XDefenderClient(QObject *parent) : QObject(parent)
     }
 
     // Track the X-Defender service appearing/disappearing at runtime.
-    bus.connect(QString(), QString(),
-                QStringLiteral("org.freedesktop.DBus.NameOwnerChanged"),
-                QStringLiteral("sss"), this,
-                SLOT(refresh()));
+    bus.connect(QString(), QStringLiteral("/org/freedesktop/DBus"),
+                QStringLiteral("org.freedesktop.DBus"),
+                QStringLiteral("NameOwnerChanged"),
+                QStringLiteral("sss"), this, SLOT(refresh()));
 
     refresh();
     m_retry->start();
