@@ -21,7 +21,20 @@ jobs:
       - name: QML yapısal lint
         run: python3 tools/qml-lint.py
       - name: Test paketi
-        run: python3 tools/run_tests.py
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          set +e
+          python3 tools/run_tests.py > /tmp/xos_tests.txt 2>&1
+          rc=$?
+          set -e
+          cat /tmp/xos_tests.txt
+          if [ "$rc" -ne 0 ]; then
+            joined=$(sed -e 's/%/%%/g' /tmp/xos_tests.txt \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::TESTS rc=$rc ${joined}"
+            exit "$rc"
+          fi
 
   build-shell:
     name: plasmex derlemesi (Debian trixie, Qt6)
