@@ -8,7 +8,10 @@ lb config noauto \
     --distribution "trixie" \
     --architectures "amd64" \
     --binary-images "iso-hybrid" \
-    --bootappend-live "boot=components locales=tr_TR.UTF-8 keyboard-layouts=tr quiet splash" \
+    --language "tr" \
+    --locales "tr_TR.UTF-8 en_US.UTF-8" \
+    --keyboard-layouts "tr" \
+    --bootappend-live "boot=components locales=tr_TR.UTF-8 keyboard-layouts=tr hostname=x-os username=xos quiet splash" \
     --bootappend-install "locales=tr_TR.UTF-8 keyboard-layouts=tr" \
     --debian-installer "false" \
     --iso-application "X-OS" \

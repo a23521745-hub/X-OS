@@ -43,6 +43,12 @@ thunar
 mousepad
 gnome-disk-utility
 
+# ── Masaüstü altyapısı ───────────────────────────────────────
+polkitd
+xdg-utils
+xdg-user-dirs
+dbus-user-session
+
 # ── Multimedya / donanım ─────────────────────────────────────
 pipewire
 wireplumber

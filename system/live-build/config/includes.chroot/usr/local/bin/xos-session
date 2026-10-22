@@ -10,25 +10,33 @@ export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-wayland;xcb}"
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export XOS_VERSION="${XOS_VERSION:-0.1.0}"
 
-# Ekran parlaklığı/ses için udev politikaları hazır değilse sessizce devam et.
+RUNDIR="${XDG_RUNTIME_DIR:-/tmp}"
 set +e
 
-# KWin (Plasma 6) kendi session dosyası olmadan, salt Wayland compositor
-# olarak çalıştırılır: plasmashell yerine plasmex panel/dock/launcher'ı sağlar.
-kwin_wayland --xwayland -- PlasmaX plasmex "$@" &
+# 1) Compositor: KWin'i salt Wayland compositor olarak başlat.
+#    (plasmashell YOK; panel/dock/launcher görevlerini plasmex üstlenir.)
+kwin_wayland --xwayland &
 KWIN_PID=$!
 
-sleep 1
+# 2) Wayland soketini bekle (kwin wayland-0'u $XDG_RUNTIME_DIR'de açar;
+#    libwayland WAYLAND_DISPLAY yoksa varsayılan "wayland-0"'a düşer).
+i=0
+while [ ! -S "$RUNDIR/wayland-0" ] && [ "$i" -lt 100 ]; do
+    kill -0 "$KWIN_PID" 2>/dev/null || break
+    sleep 0.1
+    i=$((i + 1))
+done
 
-# Shell (panel + dock + launcher + sticker katmanı)
+# 3) Shell
 if command -v plasmex >/dev/null 2>&1; then
     plasmex &
 fi
 
-# Ses / ağaç servisleri (varsa)
+# 4) Ses (varsa)
 command -v pipewire >/dev/null 2>&1 && pipewire &
 command -v wireplumber >/dev/null 2>&1 && wireplumber &
 
+# Compositor ayakta kaldığı sürece oturum yaşar.
 wait "$KWIN_PID"
 RET=$?
 
