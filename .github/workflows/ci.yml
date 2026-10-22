@@ -5,6 +5,11 @@ on:
     branches: [main, "arena/**"]
   pull_request:
 
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
 jobs:
   lint-and-test:
     name: Lint & testler
@@ -29,7 +34,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build pkg-config \
+            build-essential cmake ninja-build pkg-config curl jq git \
             qt6-base-dev qt6-declarative-dev qt6-wayland-dev \
             liblayershellqtinterface-dev \
             qml6-module-qtquick qml6-module-qtquick-controls \
@@ -38,7 +43,11 @@ jobs:
             libgl1 libegl1 libglx0 libgl1-mesa-dri libegl-mesa0 \
             libxkbcommon0 libdbus-1-3
       - name: Yapılandır & derle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
         run: |
+          source .github/workflows/xos-log.sh
           set +e
           {
             cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release &&
@@ -46,16 +55,16 @@ jobs:
           } > /tmp/xos_build.txt 2>&1
           rc=$?
           set -e
-          cat /tmp/xos_build.txt
+          echo "--- build çıktısı (rc=$rc) ---"
+          tail -n 80 /tmp/xos_build.txt || true
           if [ "$rc" -ne 0 ]; then
-            # Log indirilemediği için çıktıyı annotation olarak yayınla.
-            echo "::error::plasmex build başarısız (rc=$rc). Çıktının son 60 satırı:"
-            tail -n 60 /tmp/xos_build.txt | while IFS= read -r line; do
-              line=${line//%/%%}
-              echo "::error::${line}"
-            done
+            size=$(wc -c < /tmp/xos_build.txt | tr -d ' ')
+            echo "::error::META rc=$rc size=$size"
+            joined=$(tail -n 40 /tmp/xos_build.txt | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::JOINED ${joined}"
+            xos_post_log "plasmex build rc=$rc" /tmp/xos_build.txt
           fi
-          exit $rc
       - name: QML kaynaklarını doğrula (qmllint)
         run: |
           if command -v qmllint >/dev/null 2>&1; then
@@ -66,19 +75,23 @@ jobs:
       - name: Smoke test (offscreen, yazılım GL)
         env:
           LIBGL_ALWAYS_SOFTWARE: "1"
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
         run: |
+          source .github/workflows/xos-log.sh
           set +e
           QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800 \
             > /tmp/xos_smoke.txt 2>&1
           rc=$?
           set -e
-          cat /tmp/xos_smoke.txt
+          echo "--- smoke (rc=$rc) ---"
+          cat /tmp/xos_smoke.txt || true
           if [ "$rc" -ne 0 ] && [ "$rc" -ne 124 ]; then
-            echo "::error::smoke test başarısız (rc=$rc):"
-            tail -n 40 /tmp/xos_smoke.txt | while IFS= read -r line; do
-              line=${line//%/%%}
-              echo "::error::${line}"
-            done
+            echo "::error::smoke rc=$rc"
+            joined=$(tail -n 30 /tmp/xos_smoke.txt | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::SMOKE ${joined}"
+            xos_post_log "smoke test rc=$rc" /tmp/xos_smoke.txt
             exit 1
           fi
           echo "shell smoke testi geçti (rc=$rc)"
@@ -90,7 +103,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: live-build kur & config çalıştır
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
         run: |
+          source .github/workflows/xos-log.sh
           set +e
           {
             sudo apt-get update &&
@@ -101,12 +118,13 @@ jobs:
           } > /tmp/xos_iso.txt 2>&1
           rc=$?
           set -e
-          cat /tmp/xos_iso.txt
+          echo "--- iso config çıktısı (rc=$rc) ---"
+          tail -n 80 /tmp/xos_iso.txt || true
           if [ "$rc" -ne 0 ]; then
-            echo "::error::ISO config denetimi başarısız (rc=$rc). Çıktı:"
-            tail -n 60 /tmp/xos_iso.txt | while IFS= read -r line; do
-              line=${line//%/%%}
-              echo "::error::${line}"
-            done
+            size=$(wc -c < /tmp/xos_iso.txt | tr -d ' ')
+            echo "::error::META rc=$rc size=$size"
+            joined=$(tail -n 40 /tmp/xos_iso.txt | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::JOINED ${joined}"
+            xos_post_log "ISO config rc=$rc" /tmp/xos_iso.txt
           fi
-          exit $rc
