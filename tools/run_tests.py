@@ -89,6 +89,14 @@ def test_session_files() -> None:
         conf = sddm.read_text(encoding="utf-8")
         ok("sddm autologins into plasmax as xos",
            "User=xos" in conf and "Session=plasmax.desktop" in conf)
+    # .gitignore'daki *.d kuralı sddm.conf.d DİZİNİNİ yutup commit'e
+    # sokmamıştı: dosya git'e tracked olmalı (repo dışındaysa atla).
+    r = run(["git", "ls-files", "--error-unmatch",
+             "system/live-build/config/includes.chroot/etc/sddm.conf.d/10-xos.conf"])
+    if "not a git repository" in (r.stderr + r.stdout):
+        pass  # git yoksa bu kontrol yapılamaz
+    else:
+        ok("sddm conf is tracked in git", r.returncode == 0, r.stderr.strip())
     ok("hostname include exists", (root / "etc/hostname").exists())
     cfg = (ROOT / "system/live-build/auto/config").read_text(encoding="utf-8")
     ok("auto/config creates username=xos live user", "username=xos" in cfg)
