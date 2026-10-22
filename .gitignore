@@ -1,5 +1,7 @@
 # Prerequisites
 *.d
+# ...ama sddm.conf.d gibi yapılandırma DİZİNLERİ yutulmasın:
+!system/live-build/config/includes.chroot/etc/sddm.conf.d/
 
 # Compiled Object files
 *.slo

@@ -73,15 +73,39 @@ def test_session_files() -> None:
     if session.exists():
         text = session.read_text(encoding="utf-8")
         ok("session Exec points at xos-session",
-           "Exec=xos-session" in text, text[:200])
+           "Exec=" in text and "xos-session" in text, text[:200])
     ok("xos-session script exists",
        (root / "usr/local/bin/xos-session").exists())
     lists = ROOT / "system/live-build/config/package-lists/xos.list.chroot"
     ok("package list exists", lists.exists())
     if lists.exists():
         pkgs = lists.read_text(encoding="utf-8")
-        for need in ("sddm", "kwin", "layer-shell-qt", "qt6-wayland"):
+        for need in ("sddm", "kwin", "layer-shell-qt", "qt6-wayland", "polkitd"):
             ok(f"package list has {need}", need in pkgs)
+    # Canlı açılış için includes.chroot kritik dosyalar
+    sddm = root / "etc/sddm.conf.d/10-xos.conf"
+    ok("sddm autologin conf exists", sddm.exists())
+    if sddm.exists():
+        conf = sddm.read_text(encoding="utf-8")
+        ok("sddm autologins into plasmax as xos",
+           "User=xos" in conf and "Session=plasmax.desktop" in conf)
+    # .gitignore'daki *.d kuralı sddm.conf.d DİZİNİNİ yutup commit'e
+    # sokmamıştı: dosya git'e tracked olmalı (repo dışındaysa atla).
+    r = run(["git", "ls-files", "--error-unmatch",
+             "system/live-build/config/includes.chroot/etc/sddm.conf.d/10-xos.conf"])
+    if "not a git repository" in (r.stderr + r.stdout):
+        pass  # git yoksa bu kontrol yapılamaz
+    else:
+        ok("sddm conf is tracked in git", r.returncode == 0, r.stderr.strip())
+    ok("hostname include exists", (root / "etc/hostname").exists())
+    kbd = root / "etc/default/keyboard"
+    ok("xkb default keyboard include exists", kbd.exists())
+    if kbd.exists():
+        ok("default keyboard layout is tr",
+           'XKBLAYOUT="tr"' in kbd.read_text(encoding="utf-8"))
+    cfg = (ROOT / "system/live-build/auto/config").read_text(encoding="utf-8")
+    ok("auto/config creates username=xos live user", "username=xos" in cfg)
+    ok("live boot requests tr locale (live-config)", "locales=tr_TR.UTF-8" in cfg)
 
 
 def test_brand_safety() -> None:

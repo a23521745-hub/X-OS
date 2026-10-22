@@ -21,7 +21,20 @@ jobs:
       - name: QML yapısal lint
         run: python3 tools/qml-lint.py
       - name: Test paketi
-        run: python3 tools/run_tests.py
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          set +e
+          python3 tools/run_tests.py > /tmp/xos_tests.txt 2>&1
+          rc=$?
+          set -e
+          cat /tmp/xos_tests.txt
+          if [ "$rc" -ne 0 ]; then
+            joined=$(sed -e 's/%/%%/g' /tmp/xos_tests.txt \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::TESTS rc=$rc ${joined}"
+            exit "$rc"
+          fi
 
   build-shell:
     name: plasmex derlemesi (Debian trixie, Qt6)
@@ -144,3 +157,78 @@ jobs:
             xos_post_log "ISO config rc=$rc" /tmp/xos_iso.txt
             exit "$rc"
           fi
+
+  build-iso:
+    # X-OS canlı ISO'su → CI artifact'ı.
+    # Not: live-build chroot/mount için privileged container gerektirir;
+    # Ubuntu runner'ının live-build fork'u bayrakları tanımadığı için
+    # Debian trixie container'ında çalışır.
+    name: X-OS canlı ISO (artifact)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    needs: lint-and-test
+    timeout-minutes: 120
+    container:
+      image: debian:trixie
+      options: --privileged
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: live-build kur
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            live-build curl jq bash ca-certificates
+          # Paket adı probu (host trixie apt = aynı arşivler): hata anında
+          # logun sonuna eklenip issue yorumuna düşer.
+          for pk in kwin kwin-wayland qt6-base qt6-declarative qt6-multimedia \
+                    spectacle qt6-wayland layer-shell-qt qml6-module-qtquick; do
+            if apt-cache show "$pk" >/dev/null 2>&1; then echo "VAR  $pk"; else echo "YOK  $pk"; fi
+          done > /tmp/xos_pkg_probe.txt 2>&1 || true
+      - name: ISO üret
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
+        run: |
+          . .github/workflows/xos-log.sh
+          set +e
+          ./system/build-iso.sh > /tmp/xos_iso_build.txt 2>&1
+          rc=$?
+          set -e
+          tail -n 40 /tmp/xos_iso_build.txt || true
+          if [ "$rc" -ne 0 ]; then
+            # OOM/killed kanıtı için dmesg de topla (privileged konteyner)
+            dmesg 2>/dev/null | tail -n 40 > /tmp/xos_dmesg.txt || true
+            cat /tmp/xos_iso_build.txt > /tmp/xos_iso_dmesg.txt
+            { echo "--- dmesg tail ---"; cat /tmp/xos_dmesg.txt 2>/dev/null; } >> /tmp/xos_iso_dmesg.txt
+            { echo "--- paket adı probu ---"; cat /tmp/xos_pkg_probe.txt 2>/dev/null; } >> /tmp/xos_iso_dmesg.txt
+            echo "::error::ISO üretimi başarısız (rc=$rc)"
+            joined=$(tail -n 80 /tmp/xos_iso_dmesg.txt \
+              | sed -e 's/%/%%/g' | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::ISO ${joined}"
+            xos_post_log "ISO build rc=$rc" /tmp/xos_iso_dmesg.txt
+            exit "$rc"
+          fi
+      - name: ISO doğrula & özet
+        run: |
+          set -e
+          iso=$(find out/iso -maxdepth 1 -name '*.iso' | head -1)
+          test -n "$iso"
+          size=$(stat -c %s "$iso")
+          # gerçekçi alt sınır: 400 MB
+          test "$size" -gt 419430400
+          sha=$(sha256sum "$iso" | cut -d' ' -f1)
+          echo "ISO=$iso" >> "$GITHUB_STEP_SUMMARY"
+          echo "Boyut: $(numfmt --to=iec $size)" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA256: \`$sha\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "✓ $(basename "$iso") — $size bayt — sha256 $sha"
+      - name: Artifact yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: xos-live-iso
+          path: out/iso/
+          retention-days: 14
+          if-no-files-found: error

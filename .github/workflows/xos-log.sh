@@ -9,7 +9,7 @@ xos_post_log() {
 
     local body
     body=$(jq -n --arg t "$title" --rawfile f "$file" \
-        '("### " + $t + "\n\n```\n" + ($f | .[0:60000]) + "\n```")')
+        '("### " + $t + "\n\n```\n" + ($f | if length <= 60000 then . else .[-60000:] end) + "\n```")')
     # Arama API'si installation token ile güvenilmez; bilinen issue'ya doğrudan
     # yorum atılır (yoksa yeni issue oluşturulmaya çalışır).
     if ! curl -fsS -H "Authorization: Bearer $token" \

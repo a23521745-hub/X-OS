@@ -13,15 +13,11 @@ amd64-microcode
 
 # ── X-OS oturumu: KWin compositor + Qt6 shell ────────────────
 sddm
-kwin
 kwin-x11
 kwin-common
 kwin-wayland
 xwayland
 qt6-wayland
-qt6-base
-qt6-declarative
-qt6-multimedia
 layer-shell-qt
 qml6-module-qtquick
 qml6-module-qtquick-controls
@@ -32,16 +28,23 @@ qml6-module-qtquick-window
 qml6-module-qtqml-workerscript
 
 # ── Uygulamalar (varsayılan) ─────────────────────────────────
+# (spectacle CI'da 'Unable to locate' verdi — aday adı CI prob'unda
+#  doğrulanacak, doğrulanınca geri eklenecek)
 konsole
 dolphin
 kate
 gwenview
 okular
-spectacle
 firefox-esr
 thunar
 mousepad
 gnome-disk-utility
+
+# ── Masaüstü altyapısı ───────────────────────────────────────
+polkitd
+xdg-utils
+xdg-user-dirs
+dbus-user-session
 
 # ── Multimedya / donanım ─────────────────────────────────────
 pipewire
