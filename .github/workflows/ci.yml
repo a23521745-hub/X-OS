@@ -194,11 +194,15 @@ jobs:
           set -e
           tail -n 40 /tmp/xos_iso_build.txt || true
           if [ "$rc" -ne 0 ]; then
+            # OOM/killed kanıtı için dmesg de topla (privileged konteyner)
+            dmesg 2>/dev/null | tail -n 40 > /tmp/xos_dmesg.txt || true
+            cat /tmp/xos_iso_build.txt > /tmp/xos_iso_dmesg.txt
+            { echo "--- dmesg tail ---"; cat /tmp/xos_dmesg.txt 2>/dev/null; } >> /tmp/xos_iso_dmesg.txt
             echo "::error::ISO üretimi başarısız (rc=$rc)"
-            joined=$(grep -v -e '^\s*$' /tmp/xos_iso_build.txt | tail -n 40 \
+            joined=$(tail -n 80 /tmp/xos_iso_dmesg.txt \
               | sed -e 's/%/%%/g' | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
             echo "::error::ISO ${joined}"
-            xos_post_log "ISO build rc=$rc" /tmp/xos_iso_build.txt
+            xos_post_log "ISO build rc=$rc" /tmp/xos_iso_dmesg.txt
             exit "$rc"
           fi
       - name: ISO doğrula & özet

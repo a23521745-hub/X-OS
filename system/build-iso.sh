@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -o pipefail
 # build-iso.sh — X-OS canlı ISO'sunu live-build ile üretir.
 # Gereksinimler: Debian/Ubuntu host, sudo, live-build (lb).
 # Kullanım:      sudo ./system/build-iso.sh [--clean]
@@ -39,6 +40,7 @@ set +e
 lb build 2>&1 | tee "$OUT/build.log"
 STATUS=$?
 set -e
+echo "→ lb build çıkış kodu: $STATUS"
 
 ISO=$(find . -maxdepth 1 -name '*.iso' -type f | head -n 1)
 if [ -n "$ISO" ]; then
