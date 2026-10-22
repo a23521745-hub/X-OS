@@ -28,13 +28,16 @@ jobs:
     runs-on: ubuntu-24.04
     container: debian:trixie
     needs: lint-and-test
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: Bağımlılıklar
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            build-essential cmake ninja-build pkg-config curl jq git \
+            build-essential cmake ninja-build pkg-config curl jq git bash \
             qt6-base-dev qt6-declarative-dev qt6-wayland-dev \
             liblayershellqtinterface-dev \
             qml6-module-qtquick qml6-module-qtquick-controls \
@@ -47,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
         run: |
-          source .github/workflows/xos-log.sh
+          . .github/workflows/xos-log.sh
           set +e
           {
             cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release &&
@@ -64,6 +67,7 @@ jobs:
               | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
             echo "::error::JOINED ${joined}"
             xos_post_log "plasmex build rc=$rc" /tmp/xos_build.txt
+            exit "$rc"
           fi
       - name: QML kaynaklarını doğrula (qmllint)
         run: |
@@ -78,7 +82,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
         run: |
-          source .github/workflows/xos-log.sh
+          . .github/workflows/xos-log.sh
           set +e
           QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800 \
             > /tmp/xos_smoke.txt 2>&1
@@ -99,7 +103,13 @@ jobs:
   iso-config-check:
     name: ISO yapılandırma denetimi
     runs-on: ubuntu-24.04
+    # Ubuntu'nun live-build fork'u (3.0~a57, 2013) bayrakları tanımıyor;
+    # Debian'ın güncel live-build'ı ile container içinde denetliyoruz.
+    container: debian:trixie
     needs: lint-and-test
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: live-build kur & config çalıştır
@@ -107,11 +117,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           XOS_REPO: ${{ github.repository }}
         run: |
-          source .github/workflows/xos-log.sh
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            live-build curl jq bash
+          . .github/workflows/xos-log.sh
           set +e
           {
-            sudo apt-get update &&
-            sudo apt-get install -y live-build &&
             cd system/live-build &&
             ./auto/config &&
             test -e .build/config
@@ -127,4 +138,5 @@ jobs:
               | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
             echo "::error::JOINED ${joined}"
             xos_post_log "ISO config rc=$rc" /tmp/xos_iso.txt
+            exit "$rc"
           fi
