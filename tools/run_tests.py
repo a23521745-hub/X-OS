@@ -98,9 +98,14 @@ def test_session_files() -> None:
     else:
         ok("sddm conf is tracked in git", r.returncode == 0, r.stderr.strip())
     ok("hostname include exists", (root / "etc/hostname").exists())
+    kbd = root / "etc/default/keyboard"
+    ok("xkb default keyboard include exists", kbd.exists())
+    if kbd.exists():
+        ok("default keyboard layout is tr",
+           'XKBLAYOUT="tr"' in kbd.read_text(encoding="utf-8"))
     cfg = (ROOT / "system/live-build/auto/config").read_text(encoding="utf-8")
     ok("auto/config creates username=xos live user", "username=xos" in cfg)
-    ok("auto/config requests tr locale generation", "--locales" in cfg and "tr_TR.UTF-8" in cfg)
+    ok("live boot requests tr locale (live-config)", "locales=tr_TR.UTF-8" in cfg)
 
 
 def test_brand_safety() -> None:

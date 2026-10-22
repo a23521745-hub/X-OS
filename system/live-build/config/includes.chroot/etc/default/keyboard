@@ -1,0 +1,6 @@
+# X-OS canlı görüntü: varsayılan Türkçe klavye
+XKBMODEL="pc105"
+XKBLAYOUT="tr"
+XKBVARIANT=""
+XKBOPTIONS=""
+BACKSPACE="guess"
