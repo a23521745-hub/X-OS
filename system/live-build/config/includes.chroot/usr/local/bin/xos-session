@@ -11,12 +11,21 @@ export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export XOS_VERSION="${XOS_VERSION:-0.1.0}"
 
 RUNDIR="${XDG_RUNTIME_DIR:-/tmp}"
+LOG="/tmp/xos-session.log"
+log() {
+    echo "[$(date '+%F %T')] $*" >> "$LOG" 2>/dev/null || true
+    command -v logger >/dev/null 2>&1 && logger -t xos-session -- "$*" 2>/dev/null || true
+}
 set +e
+
+log "oturum başlıyor: xos-session (XOS_VERSION=$XOS_VERSION)"
 
 # 1) Compositor: KWin'i salt Wayland compositor olarak başlat.
 #    (plasmashell YOK; panel/dock/launcher görevlerini plasmex üstlenir.)
-kwin_wayland --xwayland &
+log "kwin_wayland --xwayland başlatılıyor"
+kwin_wayland --xwayland >> "$LOG" 2>&1 &
 KWIN_PID=$!
+log "kwin pid=$KWIN_PID"
 
 # 2) Wayland soketini bekle (kwin wayland-0'u $XDG_RUNTIME_DIR'de açar;
 #    libwayland WAYLAND_DISPLAY yoksa varsayılan "wayland-0"'a düşer).
@@ -28,8 +37,16 @@ while [ ! -S "$RUNDIR/wayland-0" ] && [ "$i" -lt 100 ]; do
 done
 
 # 3) Shell
+if [ -S "$RUNDIR/wayland-0" ]; then
+    log "wayland-0 soketi hazır"
+else
+    log "UYARI: wayland-010 sn içinde açılmadı (kwin ölmüş olabilir)"
+fi
 if command -v plasmex >/dev/null 2>&1; then
-    plasmex &
+    log "plasmex başlatılıyor: $(command -v plasmex)"
+    plasmex >> "$LOG" 2>&1 &
+else
+    log "HATA: plasmex komutu YOK — shell yüklenmeyecek (binary imajda eksik!)"
 fi
 
 # 4) Ses (varsa)
@@ -37,8 +54,10 @@ command -v pipewire >/dev/null 2>&1 && pipewire &
 command -v wireplumber >/dev/null 2>&1 && wireplumber &
 
 # Compositor ayakta kaldığı sürece oturum yaşar.
+log "kwin kapanması bekleniyor (pid=$KWIN_PID)"
 wait "$KWIN_PID"
 RET=$?
+log "kwin çıktı rc=$RET"
 
 set -e
 exit "$RET"

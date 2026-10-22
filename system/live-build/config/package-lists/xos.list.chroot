@@ -62,6 +62,10 @@ fonts-dejavu
 fonts-noto-core
 fonts-noto-color-emoji
 fonts-inter
+# QIcon::fromTheme + Qt SVG için (plasmex ikonları, KDE uygulamaları)
+hicolor-icon-theme
+breeze-icons
+libqt6svg6
 
 # ── Geliştirme (canlı ortamda derleme denemeleri için) ───────
 build-essential

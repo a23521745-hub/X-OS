@@ -98,6 +98,23 @@ def test_session_files() -> None:
     else:
         ok("sddm conf is tracked in git", r.returncode == 0, r.stderr.strip())
     ok("hostname include exists", (root / "etc/hostname").exists())
+    # v0.1 ISO hatalısı: shell binary'si imaja hiç girmemişti (oturum
+    # plasmex'i sessizce atlayıp SDDM'ye dönmüştü) — kalıcı korumalar:
+    iso = (ROOT / "system/build-iso.sh").read_text(encoding="utf-8")
+    ok("build-iso stages plasmex into includes.chroot",
+       "stage_shell" in iso and "cmake --install" in iso
+       and "includes.chroot/usr/bin/plasmex" in iso)
+    ok("build-iso has no-shell escape hatch",
+       "XOS_ISO_ALLOW_NO_SHELL" in iso)
+    ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    iso_job = ci[ci.index("name: X-OS canlı ISO"):]
+    ok("ci ISO job has shell build toolchain",
+       "qt6-base-dev" in iso_job and "build-essential" in iso_job
+       and "cmake" in iso_job)
+    ses = (root / "usr/local/bin/xos-session").read_text(encoding="utf-8")
+    ok("session writes diagnostic log", "/tmp/xos-session.log" in ses)
+    ok("session reports missing plasmex loudly",
+       "plasmex komutu YOK" in ses)
     kbd = root / "etc/default/keyboard"
     ok("xkb default keyboard include exists", kbd.exists())
     if kbd.exists():

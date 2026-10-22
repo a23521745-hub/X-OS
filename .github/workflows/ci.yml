@@ -180,7 +180,9 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            live-build curl jq bash ca-certificates
+            live-build curl jq bash ca-certificates \
+            build-essential cmake \
+            qt6-base-dev qt6-declarative-dev qt6-wayland-dev
           # Paket adı probu (host trixie apt = aynı arşivler): hata anında
           # logun sonuna eklenip issue yorumuna düşer.
           for pk in kwin kwin-wayland qt6-base qt6-declarative qt6-multimedia \
