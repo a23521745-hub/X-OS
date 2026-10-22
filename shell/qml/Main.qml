@@ -103,7 +103,6 @@ Window {
         anchors.topMargin: Theme.topBarInset * 2 + topBar.height + 6
         anchors.rightMargin: Theme.topBarInset
         model: shell.notifications
-        onCloseRequested: close()
     }
 
     LockScreen {
