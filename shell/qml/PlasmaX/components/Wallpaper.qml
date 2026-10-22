@@ -11,6 +11,9 @@ Item {
     property string mode: "aurora"
     property real parallaxX: 0
     property real parallaxY: 0
+    // Autonomous ambient drift — separate from the parallax bindings above so
+    // the animation never overwrites them.
+    property real wobble: 0
     readonly property real drift: root.parallaxX * 0.5
     readonly property bool reducedMotion: Theme.motion.reducedMotionScale === 0
 
@@ -39,7 +42,7 @@ Item {
         ShapePath {
             fillGradient: RadialGradient {
                 centerX: root.width * 0.22 + root.drift
-                centerY: root.height * 0.18 + root.parallaxY * 0.4
+                centerY: root.height * 0.18 + root.parallaxY * 0.4 + root.wobble * root.height
                 centerRadius: Math.max(root.width, root.height) * 0.62
                 GradientStop { position: 0.0; color: root.mode === "ember" ? "#FF7A4540" : "#7C5CFF55" }
                 GradientStop { position: 0.55; color: "#7C5CFF14" }
@@ -97,8 +100,8 @@ Item {
         }
     }
 
-    // Slow "living" drift, deliberately subtle: 22 s round trip, 2.5 % travel.
-    SequentialAnimation on parallaxY {
+    // Slow "living" drift, deliberately subtle: 22 s round trip, 3.5 % travel.
+    SequentialAnimation on wobble {
         running: !root.reducedMotion
         loops: Animation.Infinite
         NumberAnimation { to: 0.035; duration: 11000; easing.type: Easing.InOutSine }

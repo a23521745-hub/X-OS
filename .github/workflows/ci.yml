@@ -35,7 +35,8 @@ jobs:
             qml6-module-qtquick qml6-module-qtquick-controls \
             qml6-module-qtquick-layouts qml6-module-qtquick-shapes \
             qml6-module-qtquick-effects qml6-module-qtquick-window \
-            libgl1 libegl1 libxkbcommon0 libdbus-1-3
+            libgl1 libegl1 libglx0 libgl1-mesa-dri libegl-mesa0 \
+            libxkbcommon0 libdbus-1-3
       - name: Yapılandır & derle
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -47,13 +48,21 @@ jobs:
               shell/qml/PlasmaX/components/*.qml shell/qml/PlasmaX/panels/*.qml \
               shell/qml/PlasmaX/services/*.qml || true
           fi
-      - name: Smoke test (offscreen)
+      - name: Smoke test (offscreen, yazılım GL)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
-          QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800 \
-            && echo "shell başlayıp 8 sn yaşadı (tamam)"
-          # exit 124 = süre doldu hâlâ yaşıyordu → kabul
-          test $? -eq 0 -o $? -eq 124
-        continue-on-error: false
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800
+          rc=$?
+          set -e
+          # 0 = kendisi kapandı, 124 = süre dolarken hâlâ yaşıyordu → ikisi de iyi
+          if [ "$rc" -eq 0 ] || [ "$rc" -eq 124 ]; then
+            echo "shell smoke testi geçti (rc=$rc)"
+          else
+            echo "shell smoke testi başarısız (rc=$rc)"
+            exit 1
+          fi
 
   iso-config-check:
     name: ISO yapılandırma denetimi

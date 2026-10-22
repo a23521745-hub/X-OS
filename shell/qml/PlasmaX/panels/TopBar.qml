@@ -40,7 +40,7 @@ Item {
         spacing: Theme.s.xs
 
         Chip {
-            glyph: "⌘"
+            glyph: "◈"
             label: "X"
             active: root.menuOpen
             onClicked: root.launcherRequested()
@@ -74,7 +74,6 @@ Item {
 
         Chip {
             visible: root.system && root.system.networkLabel !== ""
-            glyph: "wifi"
             label: root.system ? root.system.networkLabel : ""
             onClicked: root.controlCenterRequested()
         }

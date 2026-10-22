@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>X-OS · PlasmaX — Liquid Glass önizleme</title>
+<link rel="stylesheet" href="../generated/tokens.css">
+<style>
+  /* Bu sayfa tasarım DİLİNİN tarayıcıdaki yaklaşık yansımasıdır.
+     Kaynak kabul testi değil, tasarım incelemesi içindir. */
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--xos-type-family, Inter), "Noto Sans", "DejaVu Sans", sans-serif;
+    background: var(--xos-dark-canvas);
+    color: var(--xos-dark-ink);
+    font-size: var(--xos-type-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  body.light {
+    background: var(--xos-light-canvas);
+    color: var(--xos-light-ink);
+  }
+
+  /* ── wallpaper ─────────────────────────────────────────────── */
+  #wall { position: fixed; inset: 0; overflow: hidden; transition: background .6s; }
+  .blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(60px); opacity: .55;
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  .b1 { width: 60vmax; height: 60vmax; left: -18vmax; top: -16vmax;
+        background: radial-gradient(circle, var(--xos-dark-accent) 0%, transparent 65%); }
+  .b2 { width: 55vmax; height: 55vmax; right: -16vmax; bottom: -14vmax;
+        background: radial-gradient(circle, #38D9E8 0%, transparent 62%);
+        animation-delay: -8s; opacity: .38; }
+  .b3 { width: 40vmax; height: 40vmax; left: 42%; bottom: -20vmax;
+        background: radial-gradient(circle, var(--xos-dark-magenta) 0%, transparent 60%);
+        animation-delay: -15s; opacity: .30; }
+  @keyframes drift {
+    from { transform: translate3d(0,0,0) scale(1); }
+    to   { transform: translate3d(4vmax, 3vmax, 0) scale(1.08); }
+  }
+  #grain {
+    position: fixed; inset: 0; pointer-events: none;
+    background-image: url("../../branding/noise.png");
+    background-size: 96px 96px; opacity: .05; mix-blend-mode: overlay;
+  }
+  body.light #wall { background: linear-gradient(160deg, #E9ECF7, #F5F7FC); }
+  body.light .blob { opacity: .34; }
+
+  /* ── glass material (mirrors GlassSurface.qml anatomy) ─────── */
+  .glass {
+    position: relative;
+    background:
+      linear-gradient(165deg, rgba(255,255,255,.14), rgba(255,255,255,.045) 45%, rgba(255,255,255,.07)),
+      rgba(16,19,25,.42);
+    -webkit-backdrop-filter: blur(28px) saturate(1.45);
+    backdrop-filter: blur(28px) saturate(1.45);
+    border-radius: var(--xos-radius-lg);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.42),
+      inset 1px 0 0 rgba(255,255,255,.16),
+      inset -1px -1px 0 rgba(255,255,255,.10),
+      0 18px 44px var(--xos-glass-dark-shadow);
+  }
+  .glass::after { /* spekülar sheen */
+    content: ""; position: absolute; inset: 0;
+    border-radius: inherit; pointer-events: none;
+    background: linear-gradient(168deg, rgba(255,255,255,.22), transparent 38%);
+    opacity: .55;
+  }
+  body.light .glass {
+    background:
+      linear-gradient(165deg, rgba(255,255,255,.85), rgba(255,255,255,.55) 55%, rgba(255,255,255,.72)),
+      rgba(255,255,255,.42);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      0 18px 44px var(--xos-glass-light-shadow);
+  }
+
+  /* ── topbar ────────────────────────────────────────────────── */
+  #topbar {
+    position: fixed; top: var(--xos-topBarInset, 10px); left: var(--xos-topBarInset, 10px);
+    right: var(--xos-topBarInset, 10px); height: var(--xos-topBarHeight, 40px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6px; z-index: 60;
+    border-radius: 999px;
+  }
+  .cluster { display: flex; gap: 6px; align-items: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 30px; padding: 0 var(--xos-radius-md, 14px);
+    border-radius: 999px; font-size: var(--xos-type-caption);
+    font-weight: var(--xos-type-weight-medium);
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16);
+    cursor: pointer; transition: all var(--xos-motion-fast, 150ms) ease;
+    position: relative; z-index: 1;
+    color: inherit;
+  }
+  .chip:hover { background: rgba(255,255,255,.18); transform: translateY(-1px); }
+  .chip.on { background: color-mix(in srgb, var(--xos-dark-accent) 30%, transparent);
+             border-color: var(--xos-dark-accent); }
+  body.light .chip { background: rgba(12,15,22,.06); border-color: rgba(12,15,22,.12); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--xos-dark-mint); }
+  .dot.warn { background: var(--xos-dark-danger); }
+
+  /* ── dock ──────────────────────────────────────────────────── */
+  #dock {
+    position: fixed; left: 50%; bottom: var(--xos-dockInset, 14px);
+    transform: translateX(-50%);
+    display: flex; gap: 6px; align-items: flex-end;
+    padding: 8px var(--xos-radius-md, 14px); z-index: 55;
+    border-radius: var(--xos-radius-xxl, 36px);
+    transition: transform .38s cubic-bezier(.22,1,.36,1), opacity .3s;
+  }
+  #dock.hidden { transform: translateX(-50%) translateY(140%); opacity: 0; }
+  .dock-cell { position: relative; display: flex; flex-direction: column;
+               align-items: center; gap: 4px; padding: 4px 4px 6px; }
+  .dock-icon {
+    width: var(--xos-dockIcon, 44px); height: var(--xos-dockIcon, 44px);
+    border-radius: var(--xos-radius-md);
+    display: grid; place-items: center; font-size: 20px;
+    background: linear-gradient(160deg, var(--xos-dark-surface-raised, #161A22), #101319);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.14);
+    transition: transform 240ms cubic-bezier(.34,1.56,.64,1);
+    transform: scale(var(--mag, 1));
+    transform-origin: bottom center;
+    position: relative; cursor: pointer;
+  }
+  body.light .dock-icon { background: #fff; border-color: rgba(12,15,22,.10); }
+  .dock-icon .glyph { filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  .dock-run { width: 4px; height: 4px; border-radius: 50%;
+              background: var(--xos-dark-accent); position: absolute; bottom: -6px; }
+  .tip {
+    position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%) translateY(4px);
+    padding: 4px 10px; border-radius: var(--xos-radius-sm, 10px); font-size: var(--xos-type-caption);
+    background: var(--xos-dark-surface-raised, #161A22); border: 1px solid rgba(255,255,255,.14);
+    opacity: 0; transition: all .15s ease; white-space: nowrap; pointer-events: none;
+  }
+  .dock-cell:hover .tip { opacity: .96; transform: translateX(-50%); }
+  .dock-sep { width: 1px; height: 34px; background: rgba(255,255,255,.16);
+              margin: 0 4px 8px; }
+
+  /* ── launcher ──────────────────────────────────────────────── */
+  #launcher {
+    position: fixed; inset: 0; z-index: 70; display: grid; place-items: center;
+    background: rgba(5,7,11,.45); opacity: 0; pointer-events: none;
+    transition: opacity var(--xos-motion-base, 240ms);
+  }
+  #launcher.open { opacity: 1; pointer-events: auto; }
+  #lcard {
+    width: min(760px, calc(100vw - 72px)); height: min(560px, calc(100vh - 72px));
+    border-radius: var(--xos-radius-xxl, 36px);
+    padding: var(--xos-radius-xl, 24px); display: flex; flex-direction: column; gap: 18px;
+    transform: scale(.94); transition: transform .38s cubic-bezier(.34,1.56,.64,1);
+  }
+  #launcher.open #lcard { transform: scale(1); }
+  #search {
+    height: 46px; border-radius: 999px; display: flex; align-items: center; gap: 10px;
+    padding: 0 18px; background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.14);
+    position: relative;
+  }
+  body.light #search { background: rgba(255,255,255,.7); border-color: rgba(12,15,22,.10); }
+  #search input {
+    flex: 1; background: none; border: 0; outline: none; color: inherit;
+    font-size: var(--xos-type-heading); font-family: inherit; user-select: text;
+  }
+  #search input::placeholder { color: var(--xos-dark-ink-faint, #6C7488); }
+  .tabs { display: flex; gap: 8px; align-items: center; }
+  .grid {
+    flex: 1; overflow: auto; display: grid;
+    grid-template-columns: repeat(auto-fill, 116px);
+    gap: 4px 8px; align-content: start; padding: 4px;
+  }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 8px;
+         padding: 12px 4px; border-radius: var(--xos-radius-lg); cursor: pointer;
+         transition: background var(--xos-motion-fast); }
+  .app:hover { background: rgba(255,255,255,.10); }
+  .app .ic {
+    width: 56px; height: 56px; border-radius: var(--xos-radius-lg);
+    display: grid; place-items: center; font-size: 24px; font-weight: 600;
+    background: linear-gradient(160deg, var(--xos-dark-surface-raised, #161A22), #101319);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 6px 14px rgba(0,0,0,.30);
+    color: var(--xos-dark-accent);
+  }
+  body.light .app .ic { background: #fff; border-color: rgba(12,15,22,.08); }
+  .app .nm { font-size: var(--xos-type-label); }
+  .app:hover .nm { font-weight: 600; }
+  .footer { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn {
+    height: 34px; padding: 0 16px; border-radius: var(--xos-radius-md);
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16);
+    color: inherit; font-family: inherit; font-size: var(--xos-type-label);
+    font-weight: 500; cursor: pointer; transition: all .15s ease;
+  }
+  .btn:hover { background: rgba(255,255,255,.18); }
+  .btn.primary { background: var(--xos-dark-accent); border-color: transparent; color: #fff;
+                 box-shadow: 0 8px 22px color-mix(in srgb, var(--xos-dark-accent) 45%, transparent); }
+  .btn.danger:hover { background: color-mix(in srgb, var(--xos-dark-danger) 30%, transparent); }
+
+  /* ── control center ────────────────────────────────────────── */
+  #cc {
+    position: fixed; top: calc(var(--xos-topBarInset, 10px) * 2 + var(--xos-topBarHeight, 40px) + 6px);
+    right: calc(var(--xos-topBarInset, 10px) * 2);
+    width: 360px; z-index: 65; padding: 18px;
+    transform-origin: top right;
+    transform: scale(.92) translateY(-8px); opacity: 0; pointer-events: none;
+    transition: all .38s cubic-bezier(.34,1.56,.64,1);
+  }
+  #cc.open { transform: none; opacity: 1; pointer-events: auto; }
+  .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .tg {
+    height: 52px; border-radius: var(--xos-radius-md);
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.14);
+    display: flex; align-items: center; gap: 10px; padding: 0 14px;
+    font-size: var(--xos-type-label); font-weight: 500; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .tg:hover { background: rgba(255,255,255,.16); }
+  .tg.on { background: color-mix(in srgb, var(--xos-dark-accent) 26%, transparent);
+           border-color: var(--xos-dark-accent); }
+  .tg .em { font-size: 16px; }
+  .row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .row .lbl { font-size: var(--xos-type-caption); opacity: .75; }
+  input[type=range] { width: 100%; accent-color: var(--xos-dark-accent); height: 4px; }
+  .card {
+    border-radius: var(--xos-radius-md); padding: 12px; margin-top: 4px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+    display: flex; align-items: center; gap: 10px; font-size: var(--xos-type-label);
+  }
+  .card.secure { border-color: color-mix(in srgb, var(--xos-dark-mint) 55%, transparent);
+                 background: color-mix(in srgb, var(--xos-dark-mint) 12%, transparent); }
+  .card .sub { font-size: var(--xos-type-caption); opacity: .7; }
+  .card .grow { flex: 1; }
+
+  /* ── stickers ──────────────────────────────────────────────── */
+  .sticker {
+    position: fixed; width: 92px; height: 92px; z-index: 30;
+    border-radius: var(--xos-radius-lg);
+    display: grid; place-items: center; font-size: 36px; cursor: grab;
+    background: color-mix(in srgb, var(--xos-dark-accent) 22%, rgba(16,19,25,.5));
+    border: 1px solid rgba(255,255,255,.30);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    box-shadow: 0 14px 30px rgba(0,0,0,.35);
+    transition: transform .24s cubic-bezier(.34,1.56,.64,1);
+  }
+  .sticker:hover { transform: scale(1.06) rotate(0deg) !important; }
+
+  /* ── hint / brand bar ─────────────────────────────────────── */
+  #hint {
+    position: fixed; left: 50%; bottom: calc(var(--xos-dockInset, 14px) + 96px);
+    transform: translateX(-50%); z-index: 40;
+    font-size: var(--xos-type-caption); opacity: .62; text-align: center;
+    background: rgba(0,0,0,.25); padding: 6px 14px; border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.10);
+  }
+  body.light #hint { background: rgba(255,255,255,.6); color: var(--xos-light-ink); }
+  kbd {
+    font-family: var(--xos-type-mono, monospace); font-size: 10px;
+    border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; opacity: .9;
+  }
+</style>
+</head>
+<body>
+  <div id="wall">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div id="grain"></div>
+
+  <!-- stickers -->
+  <div class="sticker" style="left: 6%; top: 22%; transform: rotate(-7deg);">✦</div>
+  <div class="sticker" style="left: 84%; top: 62%; transform: rotate(6deg);
+       background: color-mix(in srgb, #38D9E8 22%, rgba(16,19,25,.5));">☾</div>
+  <div class="sticker" style="left: 7%; top: 66%; transform: rotate(3deg);
+       background: color-mix(in srgb, var(--xos-dark-magenta) 22%, rgba(16,19,25,.5));">⚡</div>
+
+  <!-- topbar -->
+  <header id="topbar" class="glass">
+    <div class="cluster">
+      <button class="chip on" id="ch-launcher" title="Launcher">◈&nbsp;X</button>
+      <button class="chip" id="ch-title">PlasmaX — X-OS v0.1</button>
+    </div>
+    <div class="cluster" style="position:absolute; left:50%; transform:translateX(-50%);">
+      <button class="chip" id="ch-clock">◷ 00:00 · …</button>
+    </div>
+    <div class="cluster">
+      <button class="chip" id="ch-net"><span class="dot"></span>wlan0</button>
+      <button class="chip" id="ch-bat">⌁ 86%</button>
+      <button class="chip" id="ch-shield"><span class="dot"></span> X-Defender · Güvenli</button>
+      <button class="chip" id="ch-theme">☾</button>
+      <button class="chip" id="ch-bell">◔</button>
+      <button class="chip" id="ch-cc">⚙</button>
+    </div>
+  </header>
+
+  <!-- control center -->
+  <section id="cc" class="glass">
+    <div class="toggles">
+      <div class="tg on"><span class="em">☾</span> Tema</div>
+      <div class="tg on"><span class="em">◈</span> wlan0</div>
+      <div class="tg on"><span class="em">⬡</span> PlasmaX</div>
+      <div class="tg on"><span class="em">🛡</span> Güvenli</div>
+    </div>
+    <div class="row">
+      <span class="lbl">☀ Parlaklık</span>
+      <input type="range" min="10" max="100" value="82">
+    </div>
+    <div class="row">
+      <span class="lbl">🔊 Ses</span>
+      <input type="range" min="0" max="100" value="46">
+    </div>
+    <div class="card">⌁ <span>86% · şarj oluyor</span><span class="grow"></span>
+      <button class="btn">Tüm ayarlar</button></div>
+    <div class="card secure">🛡 <span><b>X-Defender</b><br><span class="sub">Güvenli · son tarama 12 dk önce</span></span>
+      <span class="grow"></span><button class="btn">Tara</button></div>
+  </section>
+
+  <!-- launcher -->
+  <div id="launcher">
+    <div id="lcard" class="glass">
+      <div id="search">⌕ <input id="q" placeholder="Uygulama ara…" autocomplete="off"></div>
+      <div class="tabs">
+        <button class="chip on" data-tab="apps">Uygulamalar</button>
+        <button class="chip" data-tab="stickers">Stickers</button>
+        <span style="flex:1"></span>
+        <button class="chip">⟳ Yenile</button>
+      </div>
+      <div class="grid" id="tab-apps"></div>
+      <div class="grid" id="tab-stickers" style="display:none; gap:12px;">
+        <div class="app"><div class="ic">✦</div><div class="nm">Parıltı</div></div>
+        <div class="app"><div class="ic">☾</div><div class="nm">Ay</div></div>
+        <div class="app"><div class="ic">⚡</div><div class="nm">Şimşek</div></div>
+        <div class="app"><div class="ic">♥</div><div class="nm">Kalp</div></div>
+        <div class="app"><div class="ic">✿</div><div class="nm">Çiçek</div></div>
+        <div class="app"><div class="ic">▲</div><div class="nm">Üçgen</div></div>
+        <div class="app"><div class="ic">♪</div><div class="nm">Nota</div></div>
+        <div class="app"><div class="ic">◆</div><div class="nm">Baklava</div></div>
+      </div>
+      <div class="footer">
+        <button class="btn">Kilitle</button>
+        <button class="btn">Oturumu kapat</button>
+        <button class="btn">Uyku</button>
+        <button class="btn danger">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- dock -->
+  <nav id="dock" class="glass">
+    <div class="dock-cell"><div class="dock-icon" style="--mag:1.35"><span class="glyph">🛡</span></div><span class="tip">X-Defender</span></div>
+    <div class="dock-cell"><div class="dock-icon" style="--mag:1.22"><span class="glyph">🌐</span></div><span class="tip">Web</span></div>
+    <div class="dock-cell"><div class="dock-icon" style="--mag:1.12"><span class="glyph">📁</span><span class="dock-run"></span></div><span class="tip">Dosyalar</span></div>
+    <div class="dock-cell"><div class="dock-icon" style="--mag:1.06"><span class="glyph">❯_</span></div><span class="tip">Uçbirim</span></div>
+    <div class="dock-cell"><div class="dock-icon" style="--mag:1.0"><span class="glyph">⚙</span></div><span class="tip">Ayarlar</span></div>
+    <div class="dock-sep"></div>
+    <div class="dock-cell" id="dock-launch"><div class="dock-icon"><span class="glyph" style="color:var(--xos-dark-accent)">◈</span></div><span class="tip">Launcher</span></div>
+  </nav>
+
+  <div id="hint">Launcher: <kbd>Meta</kbd> / <kbd>Ctrl</kbd>+<kbd>K</kbd> &nbsp;·&nbsp; kapat: <kbd>Esc</kbd></div>
+
+<script>
+  // ── saat ────────────────────────────────────────────────────
+  const clock = document.getElementById('ch-clock');
+  function tick() {
+    const d = new Date();
+    const t = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const day = d.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
+    clock.textContent = `◷ ${t} · ${day}`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ── launcher ────────────────────────────────────────────────
+  const launcher = document.getElementById('launcher');
+  const dock = document.getElementById('dock');
+  const cc = document.getElementById('cc');
+  const chLauncher = document.getElementById('ch-launcher');
+  const q = document.getElementById('q');
+
+  function setLauncher(open) {
+    launcher.classList.toggle('open', open);
+    dock.classList.toggle('hidden', open);
+    chLauncher.classList.toggle('on', open);
+    cc.classList.remove('open');
+    if (open) setTimeout(() => q.focus(), 60);
+  }
+  chLauncher.addEventListener('click', () => setLauncher(!launcher.classList.contains('open')));
+  document.getElementById('dock-launch').addEventListener('click', () => setLauncher(true));
+  document.getElementById('ch-title').addEventListener('click', () => setLauncher(true));
+  document.getElementById('ch-clock').addEventListener('click', () => setLauncher(true));
+  launcher.addEventListener('click', e => { if (e.target === launcher) setLauncher(false); });
+
+  // ── control center ──────────────────────────────────────────
+  const chCc = document.getElementById('ch-cc');
+  chCc.addEventListener('click', () => {
+    cc.classList.toggle('open');
+    chCc.classList.toggle('on', cc.classList.contains('open'));
+  });
+
+  // ── tema ────────────────────────────────────────────────────
+  const chTheme = document.getElementById('ch-theme');
+  chTheme.addEventListener('click', () => {
+    const light = document.body.classList.toggle('light');
+    chTheme.textContent = light ? '☀' : '☾';
+    document.querySelectorAll('.tg .em')[0].textContent = light ? '☀' : '☾';
+  });
+
+  // ── klavye: Meta/Ctrl+K açar, Esc kapatır ──────────────────
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Meta' || (e.ctrlKey && e.key.toLowerCase() === 'k'))) {
+      e.preventDefault(); setLauncher(!launcher.classList.contains('open'));
+    } else if (e.key === 'Escape') {
+      if (launcher.classList.contains('open')) setLauncher(false);
+      cc.classList.remove('open');
+    }
+  });
+
+  // ── uygulama ızgarası (demo) ────────────────────────────────
+  const apps = [
+    ['X-Defender','🛡'], ['Web','🌐'], ['Dosyalar','📁'], ['Uçbirim','▮_'],
+    ['Ayarlar','⚙'], ['Notlar','📝'], ['Resimler','🖼'], ['Müzik','♪'],
+    ['Saat','◷'], ['Hesap Makinesi','∑'], ['Paketler','⬢'], ['Kamera','◉'],
+    ['Metin Düzenleyici','✎'], ['Sistem Monitörü','📈'], ['Sürüm Kontrol','⑂'],
+  ];
+  const grid = document.getElementById('tab-apps');
+  function render(filter = '') {
+    grid.innerHTML = '';
+    apps.filter(([n]) => n.toLocaleLowerCase('tr').includes(filter.toLocaleLowerCase('tr')))
+      .forEach(([n, g]) => {
+        const d = document.createElement('div');
+        d.className = 'app';
+        d.innerHTML = `<div class="ic">${g}</div><div class="nm">${n}</div>`;
+        d.addEventListener('click', () => setLauncher(false));
+        grid.appendChild(d);
+      });
+    if (!grid.children.length)
+      grid.innerHTML = '<div style="opacity:.6; padding:12px;">Sonuç yok.</div>';
+  }
+  render();
+  q.addEventListener('input', () => render(q.value));
+
+  // ── sekmeler ────────────────────────────────────────────────
+  document.querySelectorAll('.tabs [data-tab]').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tabs [data-tab]').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      const stickers = b.dataset.tab === 'stickers';
+      document.getElementById('tab-apps').style.display = stickers ? 'none' : 'grid';
+      document.getElementById('tab-stickers').style.display = stickers ? 'grid' : 'none';
+    });
+  });
+
+  // ── dock magnifikasyonu (Gauss) ─────────────────────────────
+  const cells = [...document.querySelectorAll('#dock .dock-icon')];
+  cells.forEach(cell => {
+    const parent = cell.parentElement;
+    parent.addEventListener('mousemove', ev => {
+      const rect = cell.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const sigma = 90;
+      const dist = Math.abs(ev.clientX - cx);
+      const mag = 1 + 0.45 * Math.exp(-(dist * dist) / (2 * sigma * sigma));
+      cell.style.setProperty('--mag', mag.toFixed(3));
+    });
+    parent.addEventListener('mouseleave', () => cell.style.setProperty('--mag', 1));
+  });
+
+  // ── sticker sürükleme ───────────────────────────────────────
+  document.querySelectorAll('.sticker').forEach(s => {
+    let sx, sy, ox, oy, dragging = false;
+    s.addEventListener('pointerdown', e => {
+      dragging = true; s.setPointerCapture(e.pointerId);
+      sx = e.clientX; sy = e.clientY;
+      const m = /left:\s*([\d.]+)%/.exec(s.getAttribute('style')) || [];
+      ox = s.offsetLeft; oy = s.offsetTop;
+      s.style.left = ox + 'px'; s.style.top = oy + 'px';
+      s.style.cursor = 'grabbing';
+    });
+    s.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      s.style.left = (ox + e.clientX - sx) + 'px';
+      s.style.top = (oy + e.clientY - sy) + 'px';
+    });
+    s.addEventListener('pointerup', () => {
+      dragging = false; s.style.cursor = 'grab';
+      // ızgaraya otur
+      s.style.left = (Math.round(s.offsetLeft / 24) * 24) + 'px';
+      s.style.top = (Math.round(s.offsetTop / 24) * 24) + 'px';
+    });
+  });
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@ struct DesktopApp {
 
 class DesktopApps : public QAbstractListModel {
     Q_OBJECT
-    Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
     enum Roles {
@@ -43,6 +43,8 @@ public:
     Q_INVOKABLE void logout();
     Q_INVOKABLE void suspend();
     Q_INVOKABLE void shutdown();
+
+    int count() const { return rowCount(); }
 
 signals:
     void countChanged();

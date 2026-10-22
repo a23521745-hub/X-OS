@@ -110,6 +110,7 @@ Window {
         id: lockScreen
         anchors.fill: parent
         api: shell.api
+        blurSource: wallpaper
         visible: false
     }
 

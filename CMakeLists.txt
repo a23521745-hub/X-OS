@@ -56,13 +56,14 @@ if(XOS_BUILD_SHELL)
         Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickControls2 Qt6::DBus)
 
     # ── resources ────────────────────────────────────────────────────────────
-    file(GLOB_RECURSE XOS_QML_FILES CONFIGURE_DEPENDS
+    # FILES entries must be relative to CMAKE_CURRENT_SOURCE_DIR.
+    file(GLOB_RECURSE XOS_QML_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/shell/qml/*.qml")
     set(XOS_QML_DIRS
         shell/qml/qmldir
         shell/qml/PlasmaX/qmldir)
 
-    file(GLOB XOS_BRANDING CONFIGURE_DEPENDS
+    file(GLOB XOS_BRANDING RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/design/branding/*.svg"
         "${CMAKE_CURRENT_SOURCE_DIR}/design/branding/*.png")
 

@@ -52,7 +52,12 @@ Item {
                 required property string icon
                 required property bool running
 
-                readonly property real dist: Math.abs(iconMouse.mouseX - width / 2)
+                readonly property real dist: {
+                    // HandlerPoint position is in this cell's coordinates.
+                    if (!iconMouse.hasHover)
+                        return 99999
+                    return Math.abs(iconMouse.point.position.x - width / 2)
+                }
                 readonly property real magnified: {
                     // Gaussian: 1.0 under the cursor → 0.0 beyond 3.5 icons.
                     const sigma = root.iconSize * 1.6

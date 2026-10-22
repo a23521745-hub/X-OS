@@ -13,12 +13,12 @@ GlassSurface {
     property bool checkable: false
     property bool checked: false
     readonly property bool pressed: tap.pressed
-    readonly property bool hovered: hover.hovered
+    readonly property bool hovered: hover.containsMouse
 
     signal clicked()
 
     radius: primary ? Theme.r.pill : Theme.r.md
-    sheen: hover.hovered ? 0.85 : 0.45
+    sheen: hover.containsMouse ? 0.85 : 0.45
     elevated: primary
     backdrop: null
     implicitWidth: contentRow.implicitWidth + Theme.s.xl * 2

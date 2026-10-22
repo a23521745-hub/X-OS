@@ -53,16 +53,18 @@ void XosApi::attachShell(QObject *shellRoot)
 {
     m_window = qobject_cast<QQuickWindow *>(shellRoot);
     if (m_window) {
-        // Pointer parallax for the wallpaper.
-        auto *delivery = m_window->mouseGrabber();
-        Q_UNUSED(delivery);
-        connect(m_window, &QQuickWindow::widthChanged, this, [this]() {
-            if (m_window && m_window->visibility() == QWindow::FullScreen) {
-                if (!m_fullscreen) { m_fullscreen = true; emit fullscreenActiveChanged(); }
-            } else if (m_fullscreen) {
-                m_fullscreen = false; emit fullscreenActiveChanged();
+        // Track fullscreen state for TopBar auto-hide.
+        auto check = [this]() {
+            if (!m_window)
+                return;
+            const bool fs = m_window->visibility() == QWindow::FullScreen;
+            if (fs != m_fullscreen) {
+                m_fullscreen = fs;
+                emit fullscreenActiveChanged();
             }
-        });
+        };
+        connect(m_window, &QQuickWindow::widthChanged, this, check);
+        connect(m_window, &QQuickWindow::visibilityChanged, this, check);
     }
     updateActiveWindow();
 }

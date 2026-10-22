@@ -6,9 +6,12 @@
 //   plasmex --preview WxH   fixed-size window (design review, screenshots)
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlComponent>
 #include <QQmlContext>
+#include <QQmlError>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QVariant>
 #include <QIcon>
 
 #include "desktopapps.h"
@@ -70,13 +73,29 @@ int main(int argc, char *argv[])
     engine.addImportPath(QStringLiteral("qrc:/plasmx"));
     engine.addImportPath(QCoreApplication::applicationDirPath() + QStringLiteral("/qml"));
 
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,
-                     &app, []() { QCoreApplication::exit(1); },
-                     Qt::QueuedConnection);
-    engine.load(QUrl(QStringLiteral("qrc:/plasmx/Main.qml")));
+    // Required properties are satisfied through initialProperties — this is
+    // the one mechanism guaranteed to work for `required` roots.
+    QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/plasmx/Main.qml")));
+    if (component.isError()) {
+        for (const QQmlError &err : component.errors())
+            qWarning() << err.toString();
+        return 1;
+    }
+    QObject *root = component.createWithInitialProperties({
+        { QStringLiteral("api"), QVariant::fromValue(static_cast<QObject *>(api)) },
+        { QStringLiteral("apps"), QVariant::fromValue(static_cast<QObject *>(apps)) },
+        { QStringLiteral("system"), QVariant::fromValue(static_cast<QObject *>(system)) },
+        { QStringLiteral("settings"), QVariant::fromValue(static_cast<QObject *>(store)) },
+        { QStringLiteral("defender"), QVariant::fromValue(static_cast<QObject *>(defender)) },
+    });
+    if (!root) {
+        for (const QQmlError &err : component.errors())
+            qWarning() << err.toString();
+        return 1;
+    }
 
     if (previewSize.isValid()) {
-        if (auto *w = qobject_cast<QQuickWindow *>(engine.rootObjects().value(0))) {
+        if (auto *w = qobject_cast<QQuickWindow *>(root)) {
             w->setWidth(previewSize.width());
             w->setHeight(previewSize.height());
         }

@@ -9,7 +9,7 @@ Item {
     property string glyph: ""
     property color accent: "transparent"
     property bool active: false
-    property alias hovered: hover.hovered
+    readonly property bool hovered: hover.containsMouse
     property int paddingH: Theme.s.md
 
     signal clicked()

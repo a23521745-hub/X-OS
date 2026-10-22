@@ -1,6 +1,7 @@
 // ControlCenter — quick settings: theme, brightness/volume, network, battery
 // and the X-Defender security card.
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import PlasmaX
 
@@ -53,7 +54,7 @@ Item {
             Repeater {
                 model: [
                     { glyph: "☾", label: "Tema", key: "theme" },
-                    { glyph: "wifi", label: root.system ? root.system.networkLabel : "Ağ", key: "net" },
+                    { glyph: "◉", label: root.system ? root.system.networkLabel : "Ağ", key: "net" },
                     { glyph: "◈", label: "PlasmaX", key: "shell" },
                     { glyph: "🛡", label: root.defender ? root.defender.statusLabel : "X-Defender", key: "defender" }
                 ]

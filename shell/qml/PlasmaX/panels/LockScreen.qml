@@ -8,6 +8,7 @@ Item {
     id: root
 
     property var api
+    property Item blurSource: null   // set by the shell (the wallpaper)
 
     function unlock() {
         if (root.api && root.api.tryUnlock(pin.text)) {
@@ -25,7 +26,7 @@ Item {
     ShaderEffectSource {
         id: blurred
         anchors.fill: parent
-        sourceItem: parent.parent   // the shell window content
+        sourceItem: root.blurSource
         live: true
         visible: false
     }
@@ -86,6 +87,7 @@ Item {
             }
 
             GlassSurface {
+                id: pinBox
                 width: 260
                 height: 44
                 radius: Theme.r.pill
@@ -93,6 +95,7 @@ Item {
                 tint: "#000000"
                 tintOpacity: 0.45
                 sheen: 0.3
+                transform: Translate { id: pinShake }
 
                 TextInput {
                     id: pin
@@ -116,13 +119,14 @@ Item {
                         color: "#FFFFFF"
                         opacity: 0.5
                     }
+                }
 
-                    SequentialAnimation on x {
-                        id: shake
-                        NumberAnimation { to: 8;  duration: 60; easing.type: Easing.OutQuad }
-                        NumberAnimation { to: -8; duration: 120 }
-                        NumberAnimation { to: 0;  duration: 60; easing.type: Easing.InOutQuad }
-                    }
+                // Wrong-password shake (translate, so layout keeps control of x).
+                SequentialAnimation {
+                    id: shake
+                    NumberAnimation { target: pinShake; property: "x"; to: 8;  duration: 60; easing.type: Easing.OutQuad }
+                    NumberAnimation { target: pinShake; property: "x"; to: -8; duration: 120 }
+                    NumberAnimation { target: pinShake; property: "x"; to: 0;  duration: 60; easing.type: Easing.InOutQuad }
                 }
             }
 
