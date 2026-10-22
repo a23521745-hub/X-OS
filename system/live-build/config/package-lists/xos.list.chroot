@@ -62,9 +62,11 @@ fonts-dejavu
 fonts-noto-core
 fonts-noto-color-emoji
 fonts-inter
-# QIcon::fromTheme + Qt SVG için (plasmex ikonları, KDE uygulamaları)
+# QIcon::fromTheme + Qt SVG + imleç için (plasmex ikonları, KDE uygulamaları)
+# Not: trixie'de doğru adlar: kf6-breeze-icon-theme (içerik) / breeze-cursor-theme
 hicolor-icon-theme
-breeze-icons
+kf6-breeze-icon-theme
+breeze-cursor-theme
 libqt6svg6
 
 # ── Geliştirme (canlı ortamda derleme denemeleri için) ───────

@@ -111,6 +111,13 @@ def test_session_files() -> None:
     ok("ci ISO job has shell build toolchain",
        "qt6-base-dev" in iso_job and "build-essential" in iso_job
        and "cmake" in iso_job)
+    pl = (ROOT / "system/live-build/config/package-lists/xos.list.chroot").read_text(encoding="utf-8")
+    stripped = pl.replace("kf6-breeze-icon-theme", "")
+    ok("package list has valid breeze icon theme name",
+       "kf6-breeze-icon-theme" in pl and "breeze-icons" not in stripped
+       and "breeze-cursor-theme" in pl)
+    ok("ci preflights full package list before lb build",
+       "apt-get -s install" in ci)
     ses = (root / "usr/local/bin/xos-session").read_text(encoding="utf-8")
     ok("session writes diagnostic log", "/tmp/xos-session.log" in ses)
     ok("session reports missing plasmex loudly",
