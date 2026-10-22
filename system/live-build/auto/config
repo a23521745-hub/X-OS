@@ -1,0 +1,24 @@
+#!/bin/sh
+# live-build auto/config — X-OS canlı imza ayarları.
+# Her `lb config` (veya build-iso.sh) bu dosyayı çalıştırır.
+set -eu
+cd "$(dirname "$0")/.."
+
+lb config noauto \
+    --distribution "trixie" \
+    --architectures "amd64" \
+    --binary-images "iso-hybrid" \
+    --bootappend-live "boot=components locales=tr_TR.UTF-8 keyboard-layouts=tr quiet splash" \
+    --bootappend-install "locales=tr_TR.UTF-8 keyboard-layouts=tr" \
+    --debian-installer "false" \
+    --iso-application "X-OS" \
+    --iso-publisher "X-OS Project" \
+    --iso-volume "X-OS 0.1" \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --security "true" \
+    --updates "true" \
+    --backports "false" \
+    --firmware-chroot "true" \
+    --apt-indices "false" \
+    --apt-recommends "true" \
+    "$@"

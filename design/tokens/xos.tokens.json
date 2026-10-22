@@ -1,0 +1,145 @@
+{
+  "$schema": "https://x-os.dev/schemas/tokens-v1.json",
+  "meta": {
+    "name": "X-OS PlasmaX",
+    "version": "0.1.0",
+    "defaultMode": "dark",
+    "generatedTargets": ["shell/qml/PlasmaX/Theme.qml"],
+    "note": "Single source of truth for colours, materials and motion. Edit here, run `make tokens`."
+  },
+  "color": {
+    "dark": {
+      "canvas": "#07080C",
+      "surface": "#101319",
+      "surfaceRaised": "#161A22",
+      "ink": "#F4F6FB",
+      "inkMuted": "#A6AEC0",
+      "inkFaint": "#6C7488",
+      "line": "#FFFFFF1F",
+      "accent": "#7C5CFF",
+      "accentSoft": "#7C5CFF33",
+      "cyan": "#38D9E8",
+      "magenta": "#FF5FA2",
+      "mint": "#4BE3B0",
+      "amber": "#FFC46B",
+      "danger": "#FF6B6B",
+      "success": "#4BE3B0"
+    },
+    "light": {
+      "canvas": "#EDEFF6",
+      "surface": "#FFFFFF",
+      "surfaceRaised": "#F7F8FC",
+      "ink": "#0C0F16",
+      "inkMuted": "#4A5162",
+      "inkFaint": "#8A91A3",
+      "line": "#0C0F1614",
+      "accent": "#6244E8",
+      "accentSoft": "#6244E826",
+      "cyan": "#0FA8BC",
+      "magenta": "#E0437F",
+      "mint": "#12A97C",
+      "amber": "#C98A24",
+      "danger": "#D64545",
+      "success": "#12A97C"
+    }
+  },
+  "glass": {
+    "dark": {
+      "fill": "#FFFFFF14",
+      "fillStrong": "#FFFFFF1F",
+      "rim": "#FFFFFF59",
+      "rimSoft": "#FFFFFF24",
+      "shadow": "#00000073",
+      "tint": "#0B0D14",
+      "tintOpacity": 0.18,
+      "blurRadius": 48.0,
+      "saturation": 1.45,
+      "refraction": 0.055,
+      "caustic": 0.35,
+      "grain": 0.035
+    },
+    "light": {
+      "fill": "#FFFFFF8C",
+      "fillStrong": "#FFFFFFC4",
+      "rim": "#FFFFFFE6",
+      "rimSoft": "#FFFFFF99",
+      "shadow": "#1B20331F",
+      "tint": "#FFFFFF",
+      "tintOpacity": 0.42,
+      "blurRadius": 42.0,
+      "saturation": 1.25,
+      "refraction": 0.045,
+      "caustic": 0.22,
+      "grain": 0.028
+    }
+  },
+  "radius": {
+    "xs": 6,
+    "sm": 10,
+    "md": 14,
+    "lg": 20,
+    "xl": 28,
+    "xxl": 36,
+    "pill": 999
+  },
+  "space": {
+    "xxs": 2,
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 18,
+    "xl": 24,
+    "xxl": 36
+  },
+  "type": {
+    "family": "Inter",
+    "fallback": ["Noto Sans", "DejaVu Sans"],
+    "mono": "JetBrains Mono",
+    "fallbackMono": ["Noto Sans Mono", "DejaVu Sans Mono"],
+    "display": 32,
+    "title": 20,
+    "heading": 16,
+    "body": 14,
+    "label": 13,
+    "caption": 11,
+    "weightRegular": 400,
+    "weightMedium": 500,
+    "weightSemibold": 600
+  },
+  "motion": {
+    "durations": {
+      "instant": 90,
+      "fast": 150,
+      "base": 240,
+      "slow": 380,
+      "deliberate": 560
+    },
+    "easings": {
+      "standard": [0.2, 0.0, 0.0, 1.0],
+      "enter": [0.22, 1.0, 0.36, 1.0],
+      "exit": [0.4, 0.0, 1.0, 1.0],
+      "springy": [0.34, 1.56, 0.64, 1.0]
+    },
+    "spring": {
+      "stiffness": 380.0,
+      "damping": 34.0,
+      "mass": 1.0
+    },
+    "reducedMotionScale": 0.0
+  },
+  "layout": {
+    "topBarHeight": 40,
+    "topBarInset": 10,
+    "dockHeight": 68,
+    "dockIcon": 44,
+    "dockInset": 14,
+    "launcherWidth": 760,
+    "launcherHeight": 560,
+    "panelGap": 8
+  },
+  "elevation": {
+    "low": 8,
+    "mid": 18,
+    "high": 32
+  }
+}

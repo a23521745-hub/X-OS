@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+jobs:
+  lint-and-test:
+    name: Lint & testler
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Token senkronizasyonu
+        run: python3 tools/gen-tokens.py --check
+      - name: QML yapısal lint
+        run: python3 tools/qml-lint.py
+      - name: Test paketi
+        run: python3 tools/run_tests.py
+
+  build-shell:
+    name: plasmex derlemesi (Debian trixie, Qt6)
+    runs-on: ubuntu-24.04
+    container: debian:trixie
+    needs: lint-and-test
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bağımlılıklar
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config curl jq git bash \
+            qt6-base-dev qt6-declarative-dev qt6-wayland-dev \
+            liblayershellqtinterface-dev \
+            qml6-module-qtquick qml6-module-qtquick-controls \
+            qml6-module-qtquick-layouts qml6-module-qtquick-shapes \
+            qml6-module-qtquick-effects qml6-module-qtquick-window \
+            libgl1 libegl1 libglx0 libgl1-mesa-dri libegl-mesa0 \
+            libxkbcommon0 libdbus-1-3
+      - name: Yapılandır & derle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
+        run: |
+          . .github/workflows/xos-log.sh
+          set +e
+          {
+            cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release &&
+            cmake --build build -j"$(nproc)"
+          } > /tmp/xos_build.txt 2>&1
+          rc=$?
+          set -e
+          echo "--- build çıktısı (rc=$rc) ---"
+          tail -n 80 /tmp/xos_build.txt || true
+          if [ "$rc" -ne 0 ]; then
+            size=$(wc -c < /tmp/xos_build.txt | tr -d ' ')
+            echo "::error::META rc=$rc size=$size"
+            joined=$(grep -v -e '^/usr/bin/c' -e '^\[' -e '^\s*$' /tmp/xos_build.txt \
+              | tail -n 50 | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::JOINED ${joined}"
+            xos_post_log "plasmex build rc=$rc" /tmp/xos_build.txt
+            exit "$rc"
+          fi
+      - name: QML kaynaklarını doğrula (qmllint)
+        run: |
+          if command -v qmllint >/dev/null 2>&1; then
+            qmllint shell/qml/Main.qml shell/qml/PlasmaX/*.qml \
+              shell/qml/PlasmaX/components/*.qml shell/qml/PlasmaX/panels/*.qml \
+              shell/qml/PlasmaX/services/*.qml || true
+          fi
+      - name: Smoke test (offscreen, yazılım GL)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
+        run: |
+          . .github/workflows/xos-log.sh
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 8 ./build/plasmex --demo --preview 1280x800 \
+            > /tmp/xos_smoke.txt 2>&1
+          rc=$?
+          set -e
+          echo "--- smoke (rc=$rc) ---"
+          cat /tmp/xos_smoke.txt || true
+          if [ "$rc" -ne 0 ] && [ "$rc" -ne 124 ]; then
+            echo "::error::smoke rc=$rc"
+            joined=$(tail -n 30 /tmp/xos_smoke.txt | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::SMOKE ${joined}"
+            xos_post_log "smoke test rc=$rc" /tmp/xos_smoke.txt
+            exit 1
+          fi
+          echo "shell smoke testi geçti (rc=$rc)"
+
+  iso-config-check:
+    name: ISO yapılandırma denetimi
+    runs-on: ubuntu-24.04
+    # Ubuntu'nun live-build fork'u (3.0~a57, 2013) bayrakları tanımıyor;
+    # Debian'ın güncel live-build'ı ile container içinde denetliyoruz.
+    container: debian:trixie
+    needs: lint-and-test
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: live-build kur & config çalıştır
+        env:
+          GH_TOKEN: ${{ github.token }}
+          XOS_REPO: ${{ github.repository }}
+          XOS_LOG_ISSUE: 2
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            live-build curl jq bash
+          . .github/workflows/xos-log.sh
+          set +e
+          {
+            cd system/live-build &&
+            ./auto/config &&
+            test -e .build/config
+          } > /tmp/xos_iso.txt 2>&1
+          rc=$?
+          set -e
+          echo "--- iso config çıktısı (rc=$rc) ---"
+          tail -n 80 /tmp/xos_iso.txt || true
+          if [ "$rc" -ne 0 ]; then
+            size=$(wc -c < /tmp/xos_iso.txt | tr -d ' ')
+            echo "::error::META rc=$rc size=$size"
+            joined=$(tail -n 40 /tmp/xos_iso.txt | sed -e 's/%/%%/g' \
+              | awk 'BEGIN{f=1}{if(!f)printf "%%0A"; printf "%s",$0; f=0}')
+            echo "::error::JOINED ${joined}"
+            xos_post_log "ISO config rc=$rc" /tmp/xos_iso.txt
+            exit "$rc"
+          fi

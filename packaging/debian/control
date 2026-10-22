@@ -1,0 +1,33 @@
+Source: x-os
+Section: x11
+Priority: optional
+Maintainer: X-OS Project <xos@example.invalid>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               qt6-base-dev,
+               qt6-declarative-dev,
+               qt6-wayland-dev,
+               liblayershellqtinterface-dev,
+               pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/a23521745-hub/X-OS
+Rules-Requires-Root: no
+
+Package: plasmex
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         qml6-module-qtquick,
+         qml6-module-qtquick-controls,
+         qml6-module-qtquick-layouts,
+         qml6-module-qtquick-shapes,
+         qml6-module-qtquick-effects,
+         qml6-module-qtquick-window,
+         qt6-wayland
+Description: PlasmaX shell for the X-OS desktop
+ X-OS is a Debian Stable based operating system with its own PlasmaX
+ Wayland desktop shell. This package contains the plasmex binary:
+ top bar, dock, launcher, control center, notification center and
+ lock screen built on Qt Quick, with the Liquid Glass material
+ implemented as token-driven QML components.
+ .
+ This shell replaces plasmashell inside the X-OS session.

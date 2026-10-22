@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=PlasmaX
+Comment=X-OS PlasmaX Wayland session
+Exec=xos-session
+Type=Application
+DesktopNames=X-OS;PlasmaX
+X-GDM-SessionRegisters=true

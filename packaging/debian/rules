@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+# packaging/debian/rules — dpkg-buildpackage için minimal kural dosyası.
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DXOS_BUILD_SHELL=ON
+
+override_dh_auto_test:
+	@python3 ../../tools/run_tests.py || (cd ../.. && python3 tools/run_tests.py)

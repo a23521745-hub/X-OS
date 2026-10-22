@@ -1,0 +1,36 @@
+#!/bin/sh
+# xos-session — X-OS / PlasmaX oturum başlangıcı.
+# SDDM (veya herhangi bir display manager) bu dosyayı başlatır.
+set -eu
+
+export XDG_CURRENT_DESKTOP="X-OS:PlasmaX"
+export XDG_SESSION_DESKTOP="plasmax"
+export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-wayland}"
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-wayland;xcb}"
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export XOS_VERSION="${XOS_VERSION:-0.1.0}"
+
+# Ekran parlaklığı/ses için udev politikaları hazır değilse sessizce devam et.
+set +e
+
+# KWin (Plasma 6) kendi session dosyası olmadan, salt Wayland compositor
+# olarak çalıştırılır: plasmashell yerine plasmex panel/dock/launcher'ı sağlar.
+kwin_wayland --xwayland -- PlasmaX plasmex "$@" &
+KWIN_PID=$!
+
+sleep 1
+
+# Shell (panel + dock + launcher + sticker katmanı)
+if command -v plasmex >/dev/null 2>&1; then
+    plasmex &
+fi
+
+# Ses / ağaç servisleri (varsa)
+command -v pipewire >/dev/null 2>&1 && pipewire &
+command -v wireplumber >/dev/null 2>&1 && wireplumber &
+
+wait "$KWIN_PID"
+RET=$?
+
+set -e
+exit "$RET"

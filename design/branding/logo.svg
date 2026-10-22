@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- X-OS mark — the "X" ligature: two strokes crossing in a soft-cornered
+       rounded square.  Native geometry, no third-party marks involved. -->
+  <defs>
+    <linearGradient id="xg" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C5CFF"/>
+      <stop offset="0.55" stop-color="#5B7CFF"/>
+      <stop offset="1" stop-color="#38D9E8"/>
+    </linearGradient>
+    <linearGradient id="gl" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="32" fill="#0B0D14"/>
+  <rect x="4" y="4" width="120" height="120" rx="32" fill="url(#gl)"/>
+  <rect x="4.75" y="4.75" width="118.5" height="118.5" rx="31.25" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.5"/>
+  <path d="M36 34l24 30-24 30" stroke="url(#xg)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M92 34L68 64l24 30" stroke="url(#xg)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
