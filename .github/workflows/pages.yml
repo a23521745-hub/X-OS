@@ -1,0 +1,42 @@
+name: Pages önizleme kurulumu
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - arena/e3f60d00-x-os
+    paths:
+      - ".github/workflows/pages.yml"
+      - "design/**"
+      - ".nojekyll"
+
+permissions:
+  contents: read
+  pages: write
+
+jobs:
+  enable-pages:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Pages sitesi yoksa bu daldan aç
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            echo "Pages zaten açık ✓"
+          elif gh api -X POST "repos/${GITHUB_REPOSITORY}/pages" \
+                 -f "source[branch]=${GITHUB_REF_NAME}" -f "source[path]=/"; then
+            echo "Pages bu daldan açıldı ✓"
+          else
+            echo "::warning::Workflow tokeni sitesi açamadı — Settings > Pages > Deploy from a branch > ${GITHUB_REF_NAME} / (root) elle seçilmeli"
+            exit 1
+          fi
+      - name: Derlemesini bekle & adresi yaz
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for _ in $(seq 1 30); do
+            st=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '.status' 2>/dev/null || echo none)
+            [ "$st" = "built" ] && break
+            sleep 10
+          done
+          gh api "repos/${GITHUB_REPOSITORY}/pages" || true
